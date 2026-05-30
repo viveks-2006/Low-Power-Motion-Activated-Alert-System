@@ -245,7 +245,6 @@ def read_current():
     raw_current    = abs((adc_voltage - ACS_MIDPOINT_V) / ACS_SENSITIVITY)
 
     # Debug print — comment out after calibration
-    print("ACS raw_adc_v:{:.4f}  raw_current:{:.3f}A".format(adc_voltage, raw_current))
 
     corrected = raw_current - ACS_NOISE_OFFSET
     return round(corrected, 2) if corrected > ACS_MIN_CURRENT else 0.0
@@ -265,7 +264,6 @@ def read_voltage():
     calibration = 23000
     voltage_rms = rms_raw * calibration
     result      = round(min(voltage_rms, 260), 1)
-    print("ZMPT raw_rms:{:.5f}  volt:{:.1f}V".format(rms_raw, voltage_rms))
     return result if result > 5.0 else 0.0
 
 def calc_power(v, a):
@@ -274,7 +272,7 @@ def calc_power(v, a):
 # ─────────────────────────────────────────
 # BEEP
 # ─────────────────────────────────────────
-def beep(times=1, ms=100):
+def beep(times=1, ms=1000):
     for _ in range(times):
         buzzer.value(1)
         utime.sleep_ms(ms)
