@@ -148,9 +148,9 @@ If no motion is detected for a specified duration, the relay automatically switc
 
 🔌 Circuit Diagram
 
-Circuit Diagram
+## Circuit Diagram
 
-"Circuit Diagram" (circuit_diagram.jpeg)
+![Circuit Diagram](circuit_diagram.jpeg)
 
 ---
 
@@ -164,8 +164,7 @@ Hardware Prototype
 
 📊 Project Presentation
 
-"Download Presentation" (Smart_Motion_Alert_Circuit_PPT.pptx)
-
+[📥 Download Presentation](Smart_Motion_Alert_Circuit_PPT.pptx)
 ---
 
 💻 Software Used
