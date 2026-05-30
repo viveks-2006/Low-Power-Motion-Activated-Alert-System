@@ -36,8 +36,8 @@ PIR_PIN    = 15
 RELAY_PIN  = 14
 BUZZER_PIN = 16
 BUTTON_PIN = 18
-ACS_PIN    = 26   # Current sensor
-ZMPT_PIN   = 27   # Voltage sensor
+ACS_PIN    = 26   # Current sensor (ACS712)
+ZMPT_PIN   = 27   # Voltage sensor (ZMPT101B)
 LCD_SDA    = 0
 LCD_SCL    = 1
 
@@ -51,7 +51,7 @@ button   = Pin(BUTTON_PIN, Pin.IN, Pin.PULL_UP)
 acs_adc  = ADC(Pin(ACS_PIN))
 zmpt_adc = ADC(Pin(ZMPT_PIN))
 
-relay.value(0)
+relay.value(1)   # Relay OFF at startup (active-low)
 buzzer.value(0)
 
 # ─────────────────────────────────────────
@@ -60,8 +60,26 @@ buzzer.value(0)
 bulb_on      = False
 manual_mode  = False
 total_energy = 0.0
-TIMEOUT      = 20   # seconds
-COOLDOWN     = 8
+TIMEOUT      = 10   # seconds before auto-off
+COOLDOWN     = 8    # seconds after bulb OFF before re-trigger
+
+# ─────────────────────────────────────────
+# CURRENT SENSOR CALIBRATION
+# ─────────────────────────────────────────
+# HOW TO CALIBRATE:
+#   1. Run with bulb OFF (relay open). Note the printed RAW value.
+#   2. Set ACS_NOISE_OFFSET to that idle value.
+#   3. Run with bulb ON. Confirm a non-zero current is shown.
+#   4. If your ACS712 zero-current output is 2.5V (5V supply, not divided),
+#      change ACS_MIDPOINT_V to 2.5 and ACS_SENSITIVITY to match your module:
+#        ACS712-05B → 0.185 V/A
+#        ACS712-20A → 0.100 V/A
+#        ACS712-30A → 0.066 V/A
+
+ACS_MIDPOINT_V   = 1.65    # Change to 2.5 if sensor powered at 5V without divider
+ACS_SENSITIVITY  = 2.00   # V/A  — adjust for your ACS712 variant
+ACS_NOISE_OFFSET = 0.0     # Subtract idle noise; measure with bulb OFF and set here
+ACS_MIN_CURRENT  = 0.05    # Anything below this (after offset) treated as 0 A
 
 # ─────────────────────────────────────────
 # LCD SETUP
@@ -161,6 +179,8 @@ def blynk_send(volts, amps, watts, energy, motion, bulb):
         print("Blynk error:", e)
 
 def blynk_alert(msg):
+    # NOTE: Blynk free tier /notify endpoint often returns ECONNRESET.
+    # This is expected — silently ignore connection errors.
     try:
         ensure_wifi()
         url = "{}?token={}&message={}".format(
@@ -169,8 +189,8 @@ def blynk_alert(msg):
         r = urequests.get(url, timeout=5)
         r.close()
         gc.collect()
-    except Exception as e:
-        print("Alert error:", e)
+    except Exception:
+        pass  # Notify not supported on free tier — suppress error
 
 # ─────────────────────────────────────────
 # PIR DEBOUNCE (strict - for initial trigger)
@@ -180,17 +200,22 @@ def pir_confirmed():
     for _ in range(10):
         if pir.value() == 1:
             count += 1
-        utime.sleep_ms(200)
+        utime.sleep_ms(50)
     return count >= 8
 
 # ─────────────────────────────────────────
 # PIR ACTIVE CHECK (less strict - to keep bulb ON)
 # ─────────────────────────────────────────
 def pir_active():
-    """Quick check if PIR is currently sensing motion.
-    Less strict than pir_confirmed() — used in monitor_loop
-    to reset the auto-off timer while bulb is already ON."""
-    return pir.value() == 1
+    """Multi-sample PIR check used while bulb is ON.
+    Samples 5 times over 500ms — less strict than pir_confirmed()
+    but more reliable than a single read."""
+    count = 0
+    for _ in range(5):
+        if pir.value() == 1:
+            count += 1
+        utime.sleep_ms(100)
+    return count >= 2   # 2 out of 5 is enough to stay ON
 
 # ─────────────────────────────────────────
 # BUTTON DEBOUNCE
@@ -205,19 +230,29 @@ def button_pressed():
     return False
 
 # ─────────────────────────────────────────
-# SENSOR FUNCTIONS
+# CURRENT SENSOR (ACS712)
+# FIX: Calibrated noise floor instead of hard-coded 5.5A offset.
+#      Print raw value so you can tune ACS_NOISE_OFFSET at the top.
 # ─────────────────────────────────────────
 def read_current():
     samples = []
-    for _ in range(100):
+    for _ in range(200):
         samples.append(acs_adc.read_u16())
         utime.sleep_us(100)
-    avg     = sum(samples) / len(samples)
-    voltage = (avg / 65535) * 3.3
-    current = abs((voltage - 1.65) / 0.185)
-    # Noise floor — anything below 5.5A is noise, return 0
-    return round(current, 2) if current > 5.5 else 0.0
 
+    avg            = sum(samples) / len(samples)
+    adc_voltage    = (avg / 65535) * 3.3
+    raw_current    = abs((adc_voltage - ACS_MIDPOINT_V) / ACS_SENSITIVITY)
+
+    # Debug print — comment out after calibration
+    print("ACS raw_adc_v:{:.4f}  raw_current:{:.3f}A".format(adc_voltage, raw_current))
+
+    corrected = raw_current - ACS_NOISE_OFFSET
+    return round(corrected, 2) if corrected > ACS_MIN_CURRENT else 0.0
+
+# ─────────────────────────────────────────
+# VOLTAGE SENSOR (ZMPT101B)
+# ─────────────────────────────────────────
 def read_voltage():
     samples = []
     for _ in range(200):
@@ -227,11 +262,11 @@ def read_voltage():
         samples.append(centered ** 2)
         utime.sleep_us(100)
     rms_raw     = math.sqrt(sum(samples) / len(samples))
-    calibration = 440
+    calibration = 23000
     voltage_rms = rms_raw * calibration
-    # Noise floor — anything below 10V is noise, return 0
-    result = round(min(voltage_rms, 240), 1)
-    return result if result > 10.0 else 0.0
+    result      = round(min(voltage_rms, 260), 1)
+    print("ZMPT raw_rms:{:.5f}  volt:{:.1f}V".format(rms_raw, voltage_rms))
+    return result if result > 5.0 else 0.0
 
 def calc_power(v, a):
     return round(v * a, 2)
@@ -252,7 +287,7 @@ def beep(times=1, ms=100):
 def bulb_turn_on(reason="motion"):
     global bulb_on
     bulb_on = True
-    relay.value(1)
+    relay.value(0)   # Active-low: 0 = relay ON
     beep(2, 150)
     lcd_init()
     if reason == "motion":
@@ -268,7 +303,7 @@ def bulb_turn_off(session_energy):
     global bulb_on, manual_mode
     bulb_on     = False
     manual_mode = False
-    relay.value(0)
+    relay.value(1)   # Active-low: 1 = relay OFF
     buzzer.value(0)
     lcd_show("  Bulb OFF!    ", "Saved:{:.4f}Wh".format(session_energy))
     blynk_send(0, 0, 0, total_energy, 0, 0)
@@ -300,14 +335,17 @@ def monitor_loop(trigger):
 
     manual_mode    = (trigger == "button")
     session_energy = 0.0
-    last_motion    = utime.time()
     blynk_counter  = 0   # Send to Blynk every 5 seconds
 
     bulb_turn_on(trigger)
-    utime.sleep_ms(3000)
+    utime.sleep_ms(3000)   # PIR settle time after relay energises
+
+    # Reset timer AFTER the 3s warmup so PIR has time to settle
+    last_motion = utime.time()
+    print("Monitor started. Auto-off timer reset.")
 
     while True:
-        # ── Button toggle ──────────────────
+        # ── Button toggle ──────────────────────────────────────────
         if button_pressed():
             if bulb_on:
                 print("Button: Bulb OFF")
@@ -320,14 +358,14 @@ def monitor_loop(trigger):
                 manual_mode = True
                 bulb_turn_on("button")
 
-        # ── PIR refresh (auto mode only) ───
+        # ── PIR refresh (auto mode only) ───────────────────────────
         if not manual_mode:
             if pir_active():
                 last_motion = utime.time()
-                print("Motion still active - timer reset")
+                print("Motion still active — timer reset")
 
-        # ── Read sensors ───────────────────
-        if relay.value() == 1:
+        # ── Read sensors (only when relay is ON / bulb is ON) ──────
+        if relay.value() == 0:
             amps  = read_current()
             volts = read_voltage()
             watts = calc_power(volts, amps)
@@ -336,29 +374,29 @@ def monitor_loop(trigger):
             volts = 0.0
             watts = 0.0
 
-        # ── Energy tracking ────────────────
-        session_energy += watts / 3600
+        # ── Energy tracking ────────────────────────────────────────
+        session_energy += watts / 3600   # Wh accumulated per second
         total_energy   += watts / 3600
 
-        # ── LCD Display ────────────────────
-        mode_char = "M" if manual_mode else "A"
-        line1 = "V:{:.0f} A:{:.2f}[{}]".format(volts, amps, mode_char)
-        line2  = "W:{:.1f} E:{:.3f}".format(watts, total_energy)
+        # ── LCD Display ────────────────────────────────────────────
+        line1 = "V:{:.1f}V  A:{:.2f}A".format(volts, amps)
+        line2 = "W:{:.1f}W  E:{:.3f}Wh".format(watts, total_energy)
         lcd_show(line1, line2)
-        print("V:{} A:{} W:{} Mode:{}".format(volts, amps, watts, mode_char))
+        print("V:{:.1f}V  A:{:.2f}A  W:{:.1f}W  E:{:.4f}Wh".format(
+            volts, amps, watts, total_energy))
 
-        # ── Blynk update every 5 seconds ──
+        # ── Blynk update every 5 seconds ──────────────────────────
         blynk_counter += 1
         if blynk_counter >= 5:
             motion_val = 1 if pir.value() == 1 else 0
-            bulb_val   = 1 if relay.value() == 1 else 0
+            bulb_val   = 1 if relay.value() == 0 else 0
             blynk_send(volts, amps, watts, total_energy, motion_val, bulb_val)
             blynk_counter = 0
 
-        # ── Auto timeout (auto mode only) ──
+        # ── Auto timeout (auto mode only) ──────────────────────────
         if not manual_mode:
             if utime.time() - last_motion >= TIMEOUT:
-                print("No motion {}s - auto OFF".format(TIMEOUT))
+                print("No motion for {}s — auto OFF".format(TIMEOUT))
                 bulb_turn_off(session_energy)
                 total_energy += session_energy
                 utime.sleep_ms(COOLDOWN * 1000)
@@ -375,10 +413,8 @@ lcd_show(" Smart Motion  ", " Power System  ")
 beep(1, 300)
 utime.sleep_ms(1000)
 
-# Connect WiFi
 wifi_ok = connect_wifi()
 
-# PIR warmup
 print("PIR warming up...")
 lcd_show("PIR Warming Up ", "Please wait... ")
 utime.sleep_ms(5000)
