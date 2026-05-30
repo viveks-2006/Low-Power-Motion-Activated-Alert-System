@@ -131,12 +131,9 @@ After a predefined alert duration, the system returns to sleep mode to reduce po
 ---
 
 🔌 Circuit Diagram
+## Circuit Diagram
 
-Upload your circuit diagram image here.
-
-Example:
-
-"Circuit Diagram" (docs/circuit_diagram.png)
+![Circuit Diagram](circuit_diagram.jpeg)
 
 ---
 
