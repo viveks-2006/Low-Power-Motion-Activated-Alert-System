@@ -72,10 +72,8 @@ Component| Quantity
 Raspberry Pi Pico 2W| 1
 PIR Motion Sensor| 1
 Active Buzzer| 1
-LED| 1
-220Ω Resistor| 1
-Battery Supply| 1
-Connecting Wires| As Required
+LCD DISPLAY|1
+Connecting Wires| 
 
 ---
 
@@ -144,6 +142,11 @@ Upload images of your project setup.
 Example:
 
 "Hardware Setup" (images/hardware_setup.jpg)
+
+---
+# 📊 Project Presentation
+
+[Download Presentation](Smart_Motion_Alert_Circuit_PPT.pptx)
 
 ---
 
