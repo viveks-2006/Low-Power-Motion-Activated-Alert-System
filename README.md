@@ -158,7 +158,7 @@ If no motion is detected for a specified duration, the relay automatically switc
 
 ### Hardware Prototype
 
-![Hardware Setup](hardware_setup.jpg)
+![Hardware Setup](hardware_setup.jpeg)
 
 ---
 
