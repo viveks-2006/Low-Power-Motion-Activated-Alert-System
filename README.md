@@ -177,10 +177,9 @@ Hardware Prototype
 ---
 
 📁 Source Code Structure
+# 📁 Source Code
 
-code
-
-main.py
+[View Source Code](code/main.py)
 
 ---
 
