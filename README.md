@@ -161,9 +161,6 @@ Example:
 code/
 │
 ├── main.py
-├── sensor.py
-├── buzzer.py
-└── led.py
 
 ---
 
@@ -201,28 +198,6 @@ The developed system successfully:
 - Camera Integration
 - AI-Based Motion Recognition
 - Smart Home Integration
-
----
-
-📹 Demonstration Video
-
-Add your YouTube video link here.
-
-Example:
-
-https://youtube.com/your-demo-video
-
----
-
-📸 Project Gallery
-
-Add images of:
-
-- Circuit Diagram
-- Hardware Setup
-- Final Prototype
-- Testing Process
-- Working Demonstration
 
 ---
 
