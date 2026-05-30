@@ -1,9 +1,10 @@
-🔋 Low-Power Motion Activated Alert System
+⚡ Motion Activated Smart Load Control and Power Monitoring System
 
 🏆 Hackathon Project
 
 Team Name
--TECH FUSION
+
+TECH FUSION
 
 Team Members
 
@@ -17,52 +18,56 @@ Team Members
 
 📌 Project Overview
 
-The Low-Power Motion Activated Alert System is an energy-efficient security solution designed for long-term deployment. The system remains in ultra-low-power sleep mode and wakes only when motion is detected by a PIR sensor.
+The Motion Activated Smart Load Control and Power Monitoring System is an energy-efficient automation solution designed to reduce unnecessary power consumption.
 
-Upon detecting motion, the Raspberry Pi Pico 2W activates a buzzer and LED alert to notify nearby users. After the alert period, the system automatically returns to low-power mode, maximizing battery life and reducing energy consumption.
+The system uses a PIR Motion Sensor to detect human presence. When motion is detected, the Raspberry Pi Pico 2W automatically activates an AC load through a relay module. The system continuously monitors voltage and current consumption using dedicated sensors and displays real-time information on a 16x2 LCD display.
+
+If no motion is detected for a predefined duration, the load is automatically switched OFF, helping conserve energy and improve efficiency.
 
 ---
 
 🎯 Problem Statement
 
-Design an ultra-low-power motion-activated alert system that:
+Design an ultra-low-power motion-activated system that:
 
-- Stays in deep sleep mode most of the time
-- Wakes only on motion detection
-- Triggers a visual or audio alert
-- Consumes minimal standby power for long-term deployment
+- Detects human presence using a PIR sensor
+- Activates electrical loads only when required
+- Monitors real-time power consumption
+- Displays system status and measurements
+- Minimizes unnecessary energy usage
+- Supports smart automation applications
 
 ---
 
 💡 Proposed Solution
 
-Our solution uses a Raspberry Pi Pico 2W and a PIR Motion Sensor to continuously monitor movement while consuming minimal power.
+Our solution integrates a Raspberry Pi Pico 2W, PIR Motion Sensor, Relay Module, LCD Display, ACS712 Current Sensor, and ZMPT101B Voltage Sensor.
 
-The microcontroller remains in sleep mode during idle periods and wakes only when the PIR sensor detects human motion. The system then activates visual and audio indicators before returning to sleep mode.
+When motion is detected, the Pico activates a relay to switch ON an AC load. Simultaneously, the voltage and current sensors monitor electrical parameters and display them on the LCD.
 
-This approach significantly reduces power consumption compared to continuously running monitoring systems.
+When the monitored area becomes vacant, the system automatically switches OFF the connected load, reducing energy wastage.
 
 ---
 
 ✨ Key Features
 
-✅ Ultra-low-power operation
+✅ Motion-based load control
 
-✅ Motion-triggered wake-up
+✅ Automatic switching of AC appliances
 
-✅ Deep sleep functionality
+✅ Real-time voltage monitoring
 
-✅ Real-time intrusion detection
+✅ Real-time current monitoring
 
-✅ Audio alert using buzzer
+✅ LCD status display
 
-✅ Visual alert using LED
-
-✅ Battery-powered deployment
-
-✅ Long operational life
+✅ Energy-efficient operation
 
 ✅ Low-cost implementation
+
+✅ Smart automation capability
+
+✅ Reduced power wastage
 
 ---
 
@@ -71,9 +76,13 @@ This approach significantly reduces power consumption compared to continuously r
 Component| Quantity
 Raspberry Pi Pico 2W| 1
 PIR Motion Sensor| 1
-Active Buzzer| 1
-LCD DISPLAY|1
-Connecting Wires| 
+16x2 LCD Display (I2C)| 1
+Relay Module| 1
+ACS712 Current Sensor| 1
+ZMPT101B Voltage Sensor| 1
+Push Button| 1
+AC Bulb / Load| 1
+Connecting Wires| As Required
 
 ---
 
@@ -89,64 +98,73 @@ Raspberry Pi Pico 2W
 
 ↓
 
-Alert Processing
+Relay Control
 
 ↓
 
-LED Alert + Buzzer Alert
+AC Load (Bulb)
 
 ↓
 
-Return to Sleep Mode
+Voltage & Current Monitoring
+
+↓
+
+LCD Display
+
+↓
+
+Automatic Load Shutdown
 
 ---
 
 ⚙ Working Principle
 
-Step 1: Sleep Mode
+Step 1: Motion Detection
 
-The Raspberry Pi Pico 2W remains in low-power sleep mode to conserve energy.
+The PIR sensor continuously monitors the surrounding environment for human movement.
 
-Step 2: Motion Detection
+Step 2: Motion Trigger
 
-The PIR sensor continuously monitors infrared radiation changes caused by moving objects or humans.
+When motion is detected, the PIR sensor sends a signal to the Raspberry Pi Pico 2W.
 
-Step 3: Wake-Up Event
+Step 3: Load Activation
 
-When motion is detected, the PIR sensor sends a trigger signal to the Raspberry Pi Pico 2W.
+The Pico activates the relay module, which switches ON the connected AC load.
 
-Step 4: Alert Generation
+Step 4: Power Monitoring
 
-The controller wakes up and activates:
+The ACS712 Current Sensor and ZMPT101B Voltage Sensor measure electrical parameters in real time.
 
-- LED Indicator
-- Buzzer Alarm
+Step 5: Data Display
 
-Step 5: Return to Sleep
+Voltage, current, and system status information are displayed on the 16x2 LCD.
 
-After a predefined alert duration, the system returns to sleep mode to reduce power consumption.
+Step 6: Energy Saving
+
+If no motion is detected for a specified duration, the relay automatically switches OFF the connected load.
 
 ---
 
 🔌 Circuit Diagram
-## Circuit Diagram
 
-![Circuit Diagram](circuit_diagram.jpeg)
+Circuit Diagram
+
+"Circuit Diagram" (circuit_diagram.jpeg)
 
 ---
 
 📷 Hardware Setup
 
-Upload images of your project setup.
+Hardware Prototype
 
-Example:
-
-"Hardware Setup" (images/hardware_setup.jpg)
+"Hardware Setup" (hardware_setup.jpg)
 
 ---
-# 📊 Project Presentation
 
-[Download Presentation](Smart_Motion_Alert_Circuit_PPT.pptx)
+📊 Project Presentation
+
+"Download Presentation" (Smart_Motion_Alert_Circuit_PPT.pptx)
 
 ---
 
@@ -163,19 +181,20 @@ Example:
 
 code/
 │
-├── main.py
+└── main.py
 
 ---
 
 🚀 Applications
 
-- Home Security Systems
+- Smart Home Automation
+- Automatic Room Lighting
+- Office Energy Management
+- Classroom Automation
 - Smart Buildings
-- Office Security
-- Warehouse Monitoring
-- Wildlife Monitoring
-- Restricted Area Surveillance
-- Energy-Efficient Monitoring Systems
+- Energy Conservation Systems
+- Motion-Based Appliance Control
+- Industrial Monitoring
 
 ---
 
@@ -183,35 +202,38 @@ code/
 
 The developed system successfully:
 
-- Detects motion in real time
-- Wakes only when required
-- Generates instant alerts
-- Minimizes standby power consumption
-- Extends battery life
-- Supports long-term deployment
+- Detects human presence in real time
+- Automatically controls electrical loads
+- Reduces unnecessary power consumption
+- Monitors voltage and current continuously
+- Displays system information on LCD
+- Improves energy efficiency
+- Supports smart automation applications
 
 ---
 
 🔮 Future Scope
 
-- Mobile App Notifications
 - IoT Cloud Integration
-- Solar-Powered Operation
-- GSM-Based SMS Alerts
-- Camera Integration
-- AI-Based Motion Recognition
-- Smart Home Integration
+- Mobile Application Monitoring
+- Wi-Fi-Based Remote Control
+- Energy Usage Analytics
+- Smart Building Integration
+- AI-Based Occupancy Detection
+- Multiple Load Control System
 
 ---
 
 🏅 Innovation Highlights
 
-- Low-cost solution
-- Energy-efficient design
-- Easy deployment
+- Motion-based energy management
+- Real-time power monitoring
+- Automatic appliance control
+- Low-cost implementation
 - Scalable architecture
-- Suitable for remote locations
-- Long battery life
+- Smart automation capability
+- Energy conservation focused
+- Suitable for homes, offices, and institutions
 
 ---
 
@@ -223,4 +245,4 @@ This project is licensed under the MIT License.
 
 🙏 Acknowledgements
 
-Special thanks to the hackathon organizers, mentors, and team members for their support and guidance throughout the project development process.
+Special thanks to the hackathon organizers, mentors, faculty members, and team members for their support and guidance throughout the project development process.
