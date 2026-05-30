@@ -178,7 +178,8 @@ Hardware Prototype
 
 📁 Source Code Structure
 
-code/
+code
+
 main.py
 
 ---
